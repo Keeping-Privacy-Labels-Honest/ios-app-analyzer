@@ -1,0 +1,20 @@
+{
+    "name": "src",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "dependencies": {
+        "chalk": "^4.1.1",
+        "dotenv": "^10.0.0",
+        "execa": "^5.1.0",
+        "frida": "^15.1.6",
+        "fs-extra": "^10.0.0",
+        "glob": "^7.1.7",
+        "ipa-extract-info": "^1.2.5",
+        "node-fetch": "^2.6.1",
+        "node-stream-zip": "^1.13.6",
+        "pg-promise": "^10.10.2",
+        "plist": "^3.0.2",
+        "yesno": "^0.3.1"
+    }
+}
