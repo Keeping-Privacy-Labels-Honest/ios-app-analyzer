@@ -16,7 +16,7 @@ console.log(process.argv[2]);
 const app_timeout = 60;
 const idevice_ip = '192.168.8.174';
 const apps_dir = process.argv[2];
-const mitmdump_path = '/home/simon/venv/iOSTracker/bin/mitmdump'; // path.join(__dirname, 'venv/bin/mitmdump');
+const mitmdump_path = '/path/to/mitmdump'; // path.join(__dirname, 'venv/bin/mitmdump');
 const mitmdump_addon_path = path.join(__dirname, 'mitm-addon.py');
 
 // prettier-ignore
