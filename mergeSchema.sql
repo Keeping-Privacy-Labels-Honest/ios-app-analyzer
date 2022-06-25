@@ -1,4 +1,4 @@
-CREATE ROLE ledeco LOGIN Password '123456';
+CREATE ROLE ios LOGIN Password '123456';
 
 DROP TYPE IF EXISTS PhoneType CASCADE;
 CREATE TYPE PhoneType AS ENUM ('iphone','android');
@@ -72,7 +72,7 @@ CREATE TABLE Headers(
     REFERENCES Requests(id)
 );
 
-GRANT SELECT, INSERT ON Collections, Apps, Requests, Cookies, Headers, AppMonitorings
-TO ledeco;
+GRANT SELECT, INSERT, UPDATE ON Collections, Apps, Requests, Cookies, Headers, AppMonitorings
+TO ios;
 
-GRANT USAGE ON collections_id_seq, requests_id_seq, cookies_id_seq, headers_id_seq, appmonitorings_id_seq TO ledeco;
+GRANT USAGE ON collections_id_seq, requests_id_seq, cookies_id_seq, headers_id_seq, appmonitorings_id_seq TO ios;

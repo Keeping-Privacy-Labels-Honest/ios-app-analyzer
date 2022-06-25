@@ -6,17 +6,16 @@ const chalk = require('chalk');
 const execa = require('execa');
 const frida = require('frida');
 const { db } = require('./common/db');
-const ipaInfo = require('./common/ipa-info');
+//const ipaInfo = require('./common/ipa-info');
+const extractIPA = require('ipa-extract-info');
+const fs = require('fs');
 const { pause } = require('./common/util');
 const { assert } = require('console');
 
-// TODO config file
-console.log(process.argv);
-console.log(process.argv[2]);
 const app_timeout = 60;
-const idevice_ip = '192.168.8.174';
+const idevice_ip = '192.168.178.53';
 const apps_dir = process.argv[2];
-const mitmdump_path = '/path/to/mitmdump'; // path.join(__dirname, 'venv/bin/mitmdump');
+const mitmdump_path = '/home/simon/venv/iossdk/bin/mitmdump'
 const mitmdump_addon_path = path.join(__dirname, 'mitm-addon.py');
 
 // prettier-ignore
@@ -38,7 +37,6 @@ async function setPermission(permission, bundle_id, value) {
 }
 
 const grantLocationPermission = async (bundle_id) => {
-//    try { this try catch is evil as it would've prevented us from actually noticing the error in the main
         await execa('sshpass', ['-p', 'alpine', 'ssh', `root@${idevice_ip}`, 'open com.apple.Preferences']);
 	console.log("[granting location] connected to device")
         const session = await frida.getUsbDevice().then((f) => f.attach('Settings'));
@@ -51,13 +49,9 @@ const grantLocationPermission = async (bundle_id) => {
 	console.log("[granting location] script loaded")
         await session.detach();
 	console.log("[granting location] session detached")
-//    } catch (err) {
-//        console.log('Could not grant location permission:', err);
-//    }
 };
 
 const seedClipboard = async (string) => {
-//    try { this try catch is evil as it would've prevented us from actually noticing the error in the main
     const session = await frida.getUsbDevice().then((f) => f.attach('SpringBoard'));
     console.log("[seeding clipboard] session with device via usb established")
     const script = await session.createScript(
@@ -67,10 +61,34 @@ const seedClipboard = async (string) => {
     await script.load();
     console.log("[seeding clipboard] script loaded")
     await session.detach();
-//    } catch (err) {
-//        console.log('Could seed clipboard:', err);
-//    }
 };
+
+
+async function checkSetup() {
+    try {
+        await execa('ideviceinfo');
+    } catch (error) {
+        console.error('No device found, is a phone attached?');
+        process.exit(1);
+    }
+    try {
+        await execa(mitmdump_path, ['--version']);
+    } catch (error) {
+        console.error('mitmdump not found, did you set the path correctly?');
+        process.exit(1);
+    }
+}
+
+
+async function getIPAInfo(ipa) {
+    const fd = fs.openSync(ipa,'r');
+    var res = await extractIPA(fd, function(err, info) {
+        if(err) throw err;
+        console.log(info);
+        return info
+    })
+    return res
+}
 
 async function main() {
     await checkSetup();
@@ -79,8 +97,10 @@ async function main() {
     const collection_id = (
         await db.one("INSERT INTO Collections (phone, start_time) VALUES('iphone', NOW()) RETURNING id")
     ).id;
+    console.log(`Collection ID: ${collection_id}`);
     for (const ipa_path of ipa_paths) {
-        const [{ CFBundleIdentifier: id, CFBundleShortVersionString: version }] = await ipaInfo(ipa_path);
+        const { info : { CFBundleIdentifier: id, CFBundleShortVersionString: version } } = await getIPAInfo(ipa_path)    //await ipaInfo(ipa_path);
+        console.log(ipa_path + " id: " + id + "@" + version);
         // TODO with the new scheme this shouldn't happen, as starting the script again creates a new collection. But in the future we might want to resume an old collection on crash.
         const done = !!(
             await db.any(
@@ -175,21 +195,3 @@ async function main() {
 }
 
 main();
-async function checkSetup() {
-    //const ok = await yesno({
-    //    question: 'Have you disabled PiHole and GITZ DNS?',
-    //});
-    //if (!ok) process.exit(1);
-    try {
-        await execa('ideviceinfo');
-    } catch (error) {
-        console.error('No device found, is a phone attached?');
-        process.exit(1);
-    }
-    try {
-        await execa(mitmdump_path, ['--version']);
-    } catch (error) {
-        console.error('mitmdump not found, did you set the path correctly?');
-        process.exit(1);
-    }
-}
